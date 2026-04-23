@@ -91,6 +91,12 @@
             color: #666;
         }
 
+        .footer {
+            margin-top: 3rem;
+            font-size: 0.75rem;
+            color: #555;
+        }
+
         .dot {
             display: inline-block;
             width: 10px;
@@ -121,6 +127,7 @@
         <div class="timer" id="timer">--:--</div>
         <div class="timer-label" id="timer-label"></div>
         <div class="updated" id="updated"></div>
+        <div class="footer">Hecho por Bakuho Goto, UCR-IDS</div>
     </div>
 
     <script>
@@ -173,23 +180,27 @@
             const now = new Date();
             const remainMs = endTime - now;
 
+            // End time in Costa Rica (UTC-6)
+            const endCst = new Date(endTime.getTime() - 6 * 60 * 60 * 1000);
+            const endH = String(endCst.getUTCHours()).padStart(2, "0");
+            const endM = String(endCst.getUTCMinutes()).padStart(2, "0");
+            const endTimeStr = endH + ":" + endM;
+
             if (remainMs > 0) {
-                const remainMin = Math.floor(remainMs / 60000);
-                const remainSec = Math.floor((remainMs % 60000) / 1000);
-                timerEl.textContent = String(remainMin).padStart(2, "0") + ":" + String(remainSec).padStart(2, "0");
+                timerEl.textContent = "Hasta " + endTimeStr;
                 timerEl.className = "timer";
                 timerLabel.textContent = status === "in_room"
-                    ? "Al menos " + (remainMin + 1) + " min en la sala"
-                    : "Al menos " + (remainMin + 1) + " min ausente";
+                    ? "En la sala hasta las " + endTimeStr
+                    : "Regresa a las " + endTimeStr;
             } else {
-                timerEl.textContent = "00:00";
+                timerEl.textContent = endTimeStr + " (vencido)";
                 timerEl.className = "timer expired";
                 timerLabel.textContent = status === "in_room"
                     ? "Tiempo declarado agotado (posiblemente aun en la sala)"
                     : "Tiempo declarado agotado (puede regresar pronto)";
             }
 
-            // Costa Rica time (UTC-6)
+            // Updated time in Costa Rica (UTC-6)
             const cst = new Date(updatedTime.getTime() - 6 * 60 * 60 * 1000);
             const h = String(cst.getUTCHours()).padStart(2, "0");
             const m = String(cst.getUTCMinutes()).padStart(2, "0");
