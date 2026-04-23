@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room Monitor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            text-align: center;
+            padding: 2rem;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            color: #888;
+            margin-bottom: 2rem;
+            font-weight: 400;
+        }
+
+        .name {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.8rem 2rem;
+            border-radius: 50px;
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .status-badge.in_room {
+            background: #0d3b0d;
+            color: #4ade80;
+            border: 2px solid #4ade80;
+        }
+
+        .status-badge.out {
+            background: #3b0d0d;
+            color: #f87171;
+            border: 2px solid #f87171;
+        }
+
+        .status-badge.unknown {
+            background: #2a2a2a;
+            color: #888;
+            border: 2px solid #555;
+        }
+
+        .timer {
+            font-size: 3rem;
+            font-weight: 700;
+            margin: 1rem 0;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .timer.expired {
+            color: #888;
+        }
+
+        .timer-label {
+            font-size: 1rem;
+            color: #aaa;
+            margin-bottom: 2rem;
+        }
+
+        .updated {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        .dot.in_room { background: #4ade80; }
+        .dot.out { background: #f87171; }
+        .dot.unknown { background: #555; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Room Monitor</h1>
+        <div class="name" id="name">-</div>
+        <div>
+            <span class="dot unknown" id="dot"></span>
+            <span class="status-badge unknown" id="status-badge">-</span>
+        </div>
+        <div class="timer" id="timer">--:--</div>
+        <div class="timer-label" id="timer-label"></div>
+        <div class="updated" id="updated"></div>
+    </div>
+
+    <script>
+        const STATUS_TEXT = {
+            in_room: "在室中",
+            out: "外出中",
+            unknown: "不明"
+        };
+
+        let statusData = null;
+
+        async function fetchStatus() {
+            try {
+                const res = await fetch("/api/status");
+                statusData = await res.json();
+                render();
+            } catch (e) {
+                console.error("Fetch error:", e);
+            }
+        }
+
+        function render() {
+            if (!statusData) return;
+
+            const { name, status, minutes, updated_at } = statusData;
+
+            document.getElementById("name").textContent = name;
+
+            const badge = document.getElementById("status-badge");
+            badge.textContent = STATUS_TEXT[status] || STATUS_TEXT.unknown;
+            badge.className = "status-badge " + (status || "unknown");
+
+            const dot = document.getElementById("dot");
+            dot.className = "dot " + (status || "unknown");
+
+            const timerEl = document.getElementById("timer");
+            const timerLabel = document.getElementById("timer-label");
+            const updatedEl = document.getElementById("updated");
+
+            if (!updated_at) {
+                timerEl.textContent = "--:--";
+                timerEl.className = "timer";
+                timerLabel.textContent = "";
+                updatedEl.textContent = "";
+                return;
+            }
+
+            const updatedTime = new Date(updated_at);
+            const endTime = new Date(updatedTime.getTime() + minutes * 60 * 1000);
+            const now = new Date();
+            const remainMs = endTime - now;
+
+            if (remainMs > 0) {
+                const remainMin = Math.floor(remainMs / 60000);
+                const remainSec = Math.floor((remainMs % 60000) / 1000);
+                timerEl.textContent = String(remainMin).padStart(2, "0") + ":" + String(remainSec).padStart(2, "0");
+                timerEl.className = "timer";
+                timerLabel.textContent = status === "in_room"
+                    ? "少なくともあと " + (remainMin + 1) + " 分は在室"
+                    : "少なくともあと " + (remainMin + 1) + " 分は外出";
+            } else {
+                timerEl.textContent = "00:00";
+                timerEl.className = "timer expired";
+                timerLabel.textContent = status === "in_room"
+                    ? "申告時間を経過しました（まだ在室の可能性あり）"
+                    : "申告時間を経過しました（もうすぐ戻るかも）";
+            }
+
+            const jst = new Date(updatedTime.getTime() + 9 * 60 * 60 * 1000);
+            const h = String(jst.getUTCHours()).padStart(2, "0");
+            const m = String(jst.getUTCMinutes()).padStart(2, "0");
+            updatedEl.textContent = "最終更新: " + h + ":" + m + " (JST)";
+        }
+
+        // Initial fetch
+        fetchStatus();
+
+        // Poll every 10 seconds
+        setInterval(fetchStatus, 10000);
+
+        // Update timer every second
+        setInterval(render, 1000);
+    </script>
+</body>
+</html>
