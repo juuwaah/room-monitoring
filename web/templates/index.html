@@ -55,12 +55,14 @@
             background: #0d3b0d;
             color: #4ade80;
             border: 2px solid #4ade80;
+            animation: pulse-badge 2s infinite;
         }
 
         .status-badge.out {
             background: #3b0d0d;
             color: #f87171;
             border: 2px solid #f87171;
+            animation: pulse-badge 2s infinite;
         }
 
         .status-badge.unknown {
@@ -156,22 +158,9 @@
             color: #fff;
         }
 
-        .dot {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            margin-right: 8px;
-            animation: pulse 2s infinite;
-        }
-
-        .dot.in_room { background: #4ade80; }
-        .dot.out { background: #f87171; }
-        .dot.unknown { background: #555; }
-
-        @keyframes pulse {
+        @keyframes pulse-badge {
             0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
+            50% { opacity: 0.5; }
         }
     </style>
 </head>
@@ -180,7 +169,6 @@
         <h1>Monitor de Sala</h1>
         <div class="name" id="name">-</div>
         <div>
-            <span class="dot unknown" id="dot"></span>
             <span class="status-badge unknown" id="status-badge">-</span>
         </div>
         <div class="timer" id="timer">--:--</div>
@@ -240,9 +228,6 @@
             badge.textContent = STATUS_TEXT[status] || STATUS_TEXT.unknown;
             badge.className = "status-badge " + (status || "unknown");
 
-            const dot = document.getElementById("dot");
-            dot.className = "dot " + (status || "unknown");
-
             const timerEl = document.getElementById("timer");
             const timerLabel = document.getElementById("timer-label");
             const updatedEl = document.getElementById("updated");
@@ -267,11 +252,12 @@
             const endTimeStr = endH + ":" + endM;
 
             if (remainMs > 0) {
+                const remainMin = Math.ceil(remainMs / 60000);
                 timerEl.textContent = "Hasta " + endTimeStr;
                 timerEl.className = "timer";
                 timerLabel.textContent = status === "in_room"
-                    ? "En la sala hasta las " + endTimeStr
-                    : "Regresa a las " + endTimeStr;
+                    ? "Va a estar en la sala por " + remainMin + " min"
+                    : "Va a regresar en " + remainMin + " min";
             } else {
                 timerEl.textContent = endTimeStr + " (vencido)";
                 timerEl.className = "timer expired";
