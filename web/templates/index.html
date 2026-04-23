@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Room Monitor</title>
+    <title>Monitor de Sala</title>
     <style>
         * {
             margin: 0;
@@ -112,7 +112,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Room Monitor</h1>
+        <h1>Monitor de Sala</h1>
         <div class="name" id="name">-</div>
         <div>
             <span class="dot unknown" id="dot"></span>
@@ -125,9 +125,9 @@
 
     <script>
         const STATUS_TEXT = {
-            in_room: "在室中",
-            out: "外出中",
-            unknown: "不明"
+            in_room: "En la sala",
+            out: "Ausente",
+            unknown: "Desconocido"
         };
 
         let statusData = null;
@@ -179,20 +179,21 @@
                 timerEl.textContent = String(remainMin).padStart(2, "0") + ":" + String(remainSec).padStart(2, "0");
                 timerEl.className = "timer";
                 timerLabel.textContent = status === "in_room"
-                    ? "少なくともあと " + (remainMin + 1) + " 分は在室"
-                    : "少なくともあと " + (remainMin + 1) + " 分は外出";
+                    ? "Al menos " + (remainMin + 1) + " min en la sala"
+                    : "Al menos " + (remainMin + 1) + " min ausente";
             } else {
                 timerEl.textContent = "00:00";
                 timerEl.className = "timer expired";
                 timerLabel.textContent = status === "in_room"
-                    ? "申告時間を経過しました（まだ在室の可能性あり）"
-                    : "申告時間を経過しました（もうすぐ戻るかも）";
+                    ? "Tiempo declarado agotado (posiblemente aun en la sala)"
+                    : "Tiempo declarado agotado (puede regresar pronto)";
             }
 
-            const jst = new Date(updatedTime.getTime() + 9 * 60 * 60 * 1000);
-            const h = String(jst.getUTCHours()).padStart(2, "0");
-            const m = String(jst.getUTCMinutes()).padStart(2, "0");
-            updatedEl.textContent = "最終更新: " + h + ":" + m + " (JST)";
+            // Costa Rica time (UTC-6)
+            const cst = new Date(updatedTime.getTime() - 6 * 60 * 60 * 1000);
+            const h = String(cst.getUTCHours()).padStart(2, "0");
+            const m = String(cst.getUTCMinutes()).padStart(2, "0");
+            updatedEl.textContent = "Ultima actualizacion: " + h + ":" + m + " (Costa Rica)";
         }
 
         // Initial fetch

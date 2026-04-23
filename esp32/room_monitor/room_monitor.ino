@@ -1,25 +1,26 @@
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 #include <Keypad.h>
-#include <LiquidCrystal_I2C.h>
+#include <LiquidCrystal.h>
 #include <ArduinoJson.h>
 
 // ============================================================
 // WiFi Settings - CHANGE THESE
 // ============================================================
-const char* WIFI_SSID = "YOUR_WIFI_SSID";
-const char* WIFI_PASS = "YOUR_WIFI_PASSWORD";
+const char* WIFI_SSID = "Wmmcoto";
+const char* WIFI_PASS = "cotocoyol";
 
 // ============================================================
 // Server Settings - CHANGE THIS to your Railway URL
-// ============================================================
-const char* SERVER_URL = "https://YOUR_APP.up.railway.app/api/status";
+// =======================https://room-monitoring-production.up.railway.app/=====================================
+const char* SERVER_URL = "https://room-monitoring-production.up.railway.app/api/status";
 
 // ============================================================
-// LCD (I2C) - Address 0x27, 16 cols x 2 rows
-// SDA -> GPIO21, SCL -> GPIO22
+// LCD1602 (4-bit parallel mode)
+// RS=GPIO19, E=GPIO23, D4=GPIO18, D5=GPIO17, D6=GPIO16, D7=GPIO15
 // ============================================================
-LiquidCrystal_I2C lcd(0x27, 16, 2);
+LiquidCrystal lcd(19, 23, 18, 17, 16, 15);
 
 // ============================================================
 // Keypad 4x4
@@ -45,11 +46,11 @@ Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 // State
 // ============================================================
 enum State {
-  IDLE,
-  INPUT_MINUTES
+  STATE_IDLE,
+  STATE_INPUT
 };
 
-State currentState = IDLE;
+State currentState = STATE_IDLE;
 bool isInRoom = true;        // true = in_room, false = out
 String minutesInput = "";    // Buffer for digit input
 
@@ -59,12 +60,11 @@ String minutesInput = "";    // Buffer for digit input
 void setup() {
   Serial.begin(115200);
 
-  // Init LCD
-  lcd.init();
-  lcd.backlight();
+  // Init LCD (16 cols x 2 rows)
+  lcd.begin(16, 2);
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("Connecting WiFi");
+  lcd.print("Conectando WiFi");
 
   // Connect WiFi
   WiFi.begin(WIFI_SSID, WIFI_PASS);
@@ -80,15 +80,15 @@ void setup() {
     Serial.println("\nWiFi connected");
     Serial.println(WiFi.localIP());
     lcd.setCursor(0, 0);
-    lcd.print("WiFi Connected!");
+    lcd.print("WiFi Conectado!");
     lcd.setCursor(0, 1);
     lcd.print(WiFi.localIP());
   } else {
     Serial.println("\nWiFi FAILED");
     lcd.setCursor(0, 0);
-    lcd.print("WiFi FAILED!");
+    lcd.print("WiFi Fallo!");
     lcd.setCursor(0, 1);
-    lcd.print("Check settings");
+    lcd.print("Verificar config");
   }
 
   delay(2000);
@@ -107,10 +107,10 @@ void loop() {
   Serial.println(key);
 
   switch (currentState) {
-    case IDLE:
+    case STATE_IDLE:
       handleIdleKey(key);
       break;
-    case INPUT_MINUTES:
+    case STATE_INPUT:
       handleInputKey(key);
       break;
   }
@@ -124,13 +124,13 @@ void handleIdleKey(char key) {
     // Toggle status and start input
     isInRoom = !isInRoom;
     minutesInput = "";
-    currentState = INPUT_MINUTES;
+    currentState = STATE_INPUT;
 
     lcd.clear();
     lcd.setCursor(0, 0);
-    lcd.print(isInRoom ? "IN ROOM" : "GOING OUT");
+    lcd.print(isInRoom ? "EN SALA" : "SALIENDO");
     lcd.setCursor(0, 1);
-    lcd.print("Minutes: ");
+    lcd.print("Minutos: ");
   }
 }
 
@@ -157,14 +157,14 @@ void handleInputKey(char key) {
     // Confirm and send
     if (minutesInput.length() == 0) {
       lcd.setCursor(0, 1);
-      lcd.print("Enter a number! ");
+      lcd.print("Ingrese numero! ");
       return;
     }
     sendStatus();
   }
   else if (key == 'B') {
     // Cancel - go back to idle
-    currentState = IDLE;
+    currentState = STATE_IDLE;
     isInRoom = !isInRoom;  // Revert toggle
     showIdleScreen();
   }
@@ -178,14 +178,14 @@ void sendStatus() {
 
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("Sending...");
+  lcd.print("Enviando...");
 
   if (WiFi.status() != WL_CONNECTED) {
     lcd.clear();
     lcd.setCursor(0, 0);
-    lcd.print("WiFi Error!");
+    lcd.print("Error WiFi!");
     lcd.setCursor(0, 1);
-    lcd.print("Reconnecting...");
+    lcd.print("Reconectando...");
 
     WiFi.reconnect();
     delay(3000);
@@ -193,15 +193,18 @@ void sendStatus() {
     if (WiFi.status() != WL_CONNECTED) {
       lcd.clear();
       lcd.setCursor(0, 0);
-      lcd.print("Still no WiFi");
+      lcd.print("Sin WiFi");
       lcd.setCursor(0, 1);
-      lcd.print("B=Cancel");
+      lcd.print("B=Cancelar");
       return;
     }
   }
 
+  WiFiClientSecure client;
+  client.setInsecure();  // Skip SSL certificate verification
+
   HTTPClient http;
-  http.begin(SERVER_URL);
+  http.begin(client, SERVER_URL);
   http.addHeader("Content-Type", "application/json");
 
   // Build JSON
@@ -220,17 +223,17 @@ void sendStatus() {
   lcd.clear();
   if (httpCode == 200) {
     lcd.setCursor(0, 0);
-    lcd.print(isInRoom ? "IN ROOM" : "OUT");
+    lcd.print(isInRoom ? "EN SALA" : "AUSENTE");
     lcd.setCursor(0, 1);
-    lcd.print("Sent! ");
+    lcd.print("Enviado! ");
     lcd.print(minutes);
     lcd.print(" min");
     Serial.println("Success!");
   } else {
     lcd.setCursor(0, 0);
-    lcd.print("Send Error!");
+    lcd.print("Error envio!");
     lcd.setCursor(0, 1);
-    lcd.print("Code: ");
+    lcd.print("Codigo: ");
     lcd.print(httpCode);
     Serial.print("HTTP Error: ");
     Serial.println(httpCode);
@@ -239,7 +242,7 @@ void sendStatus() {
   http.end();
 
   delay(2000);
-  currentState = IDLE;
+  currentState = STATE_IDLE;
   showIdleScreen();
 }
 
@@ -249,8 +252,8 @@ void sendStatus() {
 void showIdleScreen() {
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("Status: ");
-  lcd.print(isInRoom ? "IN ROOM" : "OUT");
+  lcd.print("Estado: ");
+  lcd.print(isInRoom ? "EN SALA" : "AUSENTE");
   lcd.setCursor(0, 1);
-  lcd.print("A=Update B=Cancel");
+  lcd.print("A=Cambiar B=Canc");
 }
