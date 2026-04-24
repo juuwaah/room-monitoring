@@ -1,6 +1,7 @@
 # Room Monitoring System
 
-Sistema para mostrar el estado de presencia en una sala usando ESP32 + teclado + LCD, visible en la web.
+Sistema para mostrar el estado de presencia de el/la encargad@ en una sala usando ESP32 + teclado + LCD, visible en la web, con el fin de mejorar la accebilidad a la sala. 
+
 
 ## Arquitectura
 
@@ -16,7 +17,7 @@ Sistema para mostrar el estado de presencia en una sala usando ESP32 + teclado +
 |---------|-----------------|
 | VSS     | GND             |
 | VDD     | 5V (VIN)        |
-| VO      | GND (ajustar contraste con potenciometro de 10kΩ si es necesario) |
+| VO      | GND             |
 | RS      | GPIO19          |
 | RW      | GND             |
 | E       | GPIO23          |
@@ -27,6 +28,11 @@ Sistema para mostrar el estado de presencia en una sala usando ESP32 + teclado +
 | D7      | GPIO15          |
 | A       | 5V (VIN) - luz de fondo |
 | K       | GND - luz de fondo      |
+
+ajustar contraste con potenciometro de 10kΩ si es necesario o insertar resistor de 10k - 20Ω entre
+```
+[VO - GND]
+```
 
 ### Teclado de membrana 4x4
 
