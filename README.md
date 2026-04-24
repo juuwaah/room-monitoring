@@ -41,8 +41,6 @@ Sistema para mostrar el estado de presencia en una sala usando ESP32 + teclado +
 | 7              | GPIO33     | Col 3   |
 | 8              | GPIO32     | Col 4   |
 
-Los pines del teclado van de izquierda (Pin 1) a derecha (Pin 8) visto desde el frente.
-
 ## Configuracion del ESP32
 
 ### Bibliotecas necesarias (Arduino IDE Library Manager)
@@ -50,15 +48,6 @@ Los pines del teclado van de izquierda (Pin 1) a derecha (Pin 8) visto desde el 
 - `Keypad` by Mark Stanley
 - `LiquidCrystal` (incluida con ESP32, no requiere instalacion)
 - `ArduinoJson` by Benoit Blanchon
-
-### Pasos
-
-1. Agregar la placa ESP32 en Arduino IDE (buscar `esp32` en el Board Manager)
-2. Instalar las bibliotecas mencionadas
-3. Abrir `esp32/room_monitor/room_monitor.ino`
-4. Cambiar el SSID y contrasena del WiFi
-5. Cambiar `SERVER_URL` a la URL de Railway
-6. Seleccionar `ESP32 Dev Module` como placa y subir el codigo
 
 ### Uso del teclado
 
@@ -70,34 +59,3 @@ Los pines del teclado van de izquierda (Pin 1) a derecha (Pin 8) visto desde el 
 | #     | Borrar ultimo digito |
 | B     | Cancelar |
 
-## Despliegue Web (Railway)
-
-### Prueba local
-
-```bash
-cd web
-pip install -r requirements.txt
-python app.py
-```
-
-Prueba con curl:
-
-```bash
-# Enviar estado
-curl -X POST http://localhost:5000/api/status \
-  -H "Content-Type: application/json" \
-  -d '{"status": "in_room", "minutes": 30}'
-
-# Consultar estado
-curl http://localhost:5000/api/status
-```
-
-Abrir http://localhost:5000 en el navegador para verificar.
-
-### Despliegue en Railway
-
-1. Iniciar sesion en [Railway](https://railway.app)
-2. `New Project` → `Deploy from GitHub repo` o usar el CLI
-3. Configurar Root Directory como `web`
-4. Se construye y despliega automaticamente
-5. Copiar la URL generada y configurarla en `SERVER_URL` del ESP32

@@ -5,128 +5,145 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Monitor de Sala</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: #1a1a2e;
-            color: #eee;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            font-family: "Times New Roman", Times, serif;
+            background: #c0c0c0;
+            color: #000;
+            margin: 0;
+            padding: 20px;
         }
 
-        .container {
-            text-align: center;
-            padding: 2rem;
-            max-width: 500px;
-            width: 100%;
+        .page {
+            max-width: 580px;
+            margin: 0 auto;
+        }
+
+        .titlebar {
+            background: #000080;
+            color: #fff;
+            font-weight: bold;
+            font-size: 14px;
+            padding: 3px 6px;
+            margin-bottom: 8px;
+        }
+
+        .panel {
+            border: 2px outset #fff;
+            background: #c0c0c0;
+            padding: 16px;
+            margin-bottom: 8px;
+        }
+
+        .panel-inset {
+            border: 2px inset #888;
+            background: #fff;
+            padding: 12px;
+            margin: 8px 0;
         }
 
         h1 {
-            font-size: 1.5rem;
-            color: #888;
-            margin-bottom: 2rem;
-            font-weight: 400;
+            font-size: 22px;
+            text-align: center;
+            margin: 0 0 4px 0;
+        }
+
+        hr {
+            border: none;
+            border-top: 2px groove #c0c0c0;
+            margin: 10px 0;
         }
 
         .name {
-            font-size: 1.8rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .status-line {
+            text-align: center;
+            margin: 12px 0;
         }
 
         .status-badge {
             display: inline-block;
-            padding: 0.8rem 2rem;
-            border-radius: 50px;
-            font-size: 1.6rem;
-            font-weight: 700;
-            margin-bottom: 1.5rem;
-            transition: all 0.3s ease;
+            font-size: 20px;
+            font-weight: bold;
+            padding: 4px 16px;
+            border: 2px outset #fff;
         }
 
         .status-badge.in_room {
-            background: #0d3b0d;
-            color: #4ade80;
-            border: 2px solid #4ade80;
-            animation: pulse-badge 2s infinite;
+            background: #00aa00;
+            color: #fff;
+            animation: blink90s 1.5s step-end infinite;
         }
 
         .status-badge.out {
-            background: #3b0d0d;
-            color: #f87171;
-            border: 2px solid #f87171;
-            animation: pulse-badge 2s infinite;
+            background: #cc0000;
+            color: #fff;
+            animation: blink90s 1.5s step-end infinite;
         }
 
         .status-badge.unknown {
-            background: #2a2a2a;
-            color: #888;
-            border: 2px solid #555;
+            background: #808080;
+            color: #fff;
+        }
+
+        @keyframes blink90s {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
         }
 
         .timer {
-            font-size: 3rem;
-            font-weight: 700;
-            margin: 1rem 0;
-            font-variant-numeric: tabular-nums;
+            font-size: 28px;
+            font-weight: bold;
+            text-align: center;
+            margin: 8px 0 4px 0;
+            font-family: "Courier New", Courier, monospace;
         }
 
         .timer.expired {
-            color: #888;
+            color: #808080;
         }
 
         .timer-label {
-            font-size: 1rem;
-            color: #aaa;
-            margin-bottom: 2rem;
+            font-size: 14px;
+            text-align: center;
+            color: #333;
+            margin-bottom: 8px;
         }
 
         .updated {
-            font-size: 0.85rem;
+            font-size: 12px;
             color: #666;
+            text-align: center;
         }
 
-        .footer {
-            margin-top: 3rem;
-            font-size: 0.75rem;
-            color: #555;
-        }
-
-        .instructions-toggle {
-            margin-top: 2rem;
-            background: none;
-            border: 1px solid #444;
-            color: #aaa;
-            padding: 0.5rem 1.2rem;
-            border-radius: 8px;
+        .btn90s {
+            display: block;
+            width: 100%;
+            margin-top: 12px;
+            padding: 4px 12px;
+            font-family: "Times New Roman", Times, serif;
+            font-size: 14px;
+            background: #c0c0c0;
+            border: 2px outset #fff;
             cursor: pointer;
-            font-size: 0.9rem;
-            transition: all 0.2s;
+            text-align: center;
         }
 
-        .instructions-toggle:hover {
-            border-color: #888;
-            color: #eee;
+        .btn90s:active {
+            border-style: inset;
         }
 
         .instructions {
             display: none;
-            text-align: left;
-            background: #16213e;
-            border: 1px solid #333;
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-top: 1rem;
-            font-size: 0.9rem;
-            line-height: 1.7;
-            color: #ccc;
+            border: 2px inset #888;
+            background: #fff;
+            padding: 10px 14px;
+            margin-top: 8px;
+            font-size: 14px;
+            line-height: 1.6;
         }
 
         .instructions.open {
@@ -134,71 +151,93 @@
         }
 
         .instructions h3 {
-            color: #eee;
-            margin-bottom: 0.8rem;
-            font-size: 1rem;
+            font-size: 14px;
+            margin: 8px 0 4px 0;
+        }
+
+        .instructions h3:first-child {
+            margin-top: 0;
         }
 
         .instructions ol {
-            padding-left: 1.2rem;
+            padding-left: 20px;
+            margin: 0;
         }
 
         .instructions li {
-            margin-bottom: 0.5rem;
+            margin-bottom: 4px;
         }
 
-        .instructions .key {
-            display: inline-block;
-            background: #2a2a4a;
-            border: 1px solid #555;
-            border-radius: 4px;
-            padding: 0.1rem 0.5rem;
-            font-family: monospace;
-            font-size: 0.85rem;
-            color: #fff;
+        .key {
+            font-family: "Courier New", Courier, monospace;
+            font-weight: bold;
+            background: #c0c0c0;
+            border: 1px outset #fff;
+            padding: 0 4px;
+            font-size: 13px;
         }
 
-        @keyframes pulse-badge {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+        .footer {
+            text-align: center;
+            font-size: 11px;
+            color: #666;
+            margin-top: 6px;
+        }
+
+        .counter {
+            text-align: center;
+            font-size: 11px;
+            color: #808080;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Monitor de Sala</h1>
-        <div class="name" id="name">-</div>
-        <div>
-            <span class="status-badge unknown" id="status-badge">-</span>
-        </div>
-        <div class="timer" id="timer">--:--</div>
-        <div class="timer-label" id="timer-label"></div>
-        <div class="updated" id="updated"></div>
-        <button class="instructions-toggle" onclick="document.getElementById('instructions').classList.toggle('open')">
-            Instrucciones para el staff
-        </button>
-        <div class="instructions" id="instructions">
-            <h3>Como usar el teclado</h3>
-            <ol>
-                <li>Presione <span class="key">A</span> para cambiar el estado (en sala / ausente)</li>
-                <li>Ingrese los minutos con las teclas <span class="key">0</span>-<span class="key">9</span> (ej: <span class="key">3</span><span class="key">0</span> = 30 min)</li>
-                <li>Presione <span class="key">*</span> para confirmar y enviar</li>
-            </ol>
-            <h3>Otras teclas</h3>
-            <ol>
-                <li><span class="key">#</span> Borrar ultimo digito</li>
-                <li><span class="key">B</span> Cancelar y volver sin enviar</li>
-            </ol>
-            <h3>Ejemplo</h3>
-            <ol>
-                <li>Al salir de la sala: <span class="key">A</span> &rarr; <span class="key">2</span><span class="key">0</span> &rarr; <span class="key">*</span> (ausente 20 min)</li>
-                <li>Al regresar: <span class="key">A</span> &rarr; <span class="key">6</span><span class="key">0</span> &rarr; <span class="key">*</span> (en sala 60 min)</li>
-            </ol>
+    <div class="page">
+        <div class="titlebar">Monitor de Sala - Netscape</div>
+        <div class="panel">
+            <h1>Monitor de Sala</h1>
+            <hr>
+            <div class="panel-inset">
+                <div class="name" id="name">-</div>
+                <div class="status-line">
+                    <span class="status-badge unknown" id="status-badge">-</span>
+                </div>
+                <div class="timer" id="timer">--:--</div>
+                <div class="timer-label" id="timer-label"></div>
+                <hr>
+                <div class="updated" id="updated"></div>
+            </div>
+            <button class="btn90s" onclick="document.getElementById('instructions').classList.toggle('open')">
+                [ Instrucciones para el staff ]
+            </button>
+            <div class="instructions" id="instructions">
+                <h3>Como usar el teclado:</h3>
+                <ol>
+                    <li>Presione <span class="key">A</span> para cambiar el estado (en sala / ausente)</li>
+                    <li>Ingrese los minutos con <span class="key">0</span>-<span class="key">9</span> (ej: <span class="key">3</span><span class="key">0</span> = 30 min)</li>
+                    <li>Presione <span class="key">*</span> para confirmar y enviar</li>
+                </ol>
+                <h3>Otras teclas:</h3>
+                <ol>
+                    <li><span class="key">#</span> - Borrar ultimo digito</li>
+                    <li><span class="key">B</span> - Cancelar y volver sin enviar</li>
+                </ol>
+                <h3>Ejemplo:</h3>
+                <ol>
+                    <li>Al salir: <span class="key">A</span> &rarr; <span class="key">2</span><span class="key">0</span> &rarr; <span class="key">*</span> (ausente 20 min)</li>
+                    <li>Al regresar: <span class="key">A</span> &rarr; <span class="key">6</span><span class="key">0</span> &rarr; <span class="key">*</span> (en sala 60 min)</li>
+                </ol>
+            </div>
         </div>
         <div class="footer">Hecho por Bakuho Goto, UCR-IDS</div>
+        <div class="counter"><img width="1" height="1" alt="">Visitante No. <span id="visitor">???</span></div>
     </div>
 
     <script>
+        // Fake visitor counter for the 90s vibe
+        document.getElementById("visitor").textContent = String(Math.floor(Math.random() * 9000) + 1000);
+
         const STATUS_TEXT = {
             in_room: "En la sala",
             out: "Ausente",
@@ -273,13 +312,8 @@
             updatedEl.textContent = "Ultima actualizacion: " + h + ":" + m + " (Costa Rica)";
         }
 
-        // Initial fetch
         fetchStatus();
-
-        // Poll every 10 seconds
         setInterval(fetchStatus, 10000);
-
-        // Update timer every second
         setInterval(render, 1000);
     </script>
 </body>
