@@ -6,13 +6,13 @@
 #include <ArduinoJson.h>
 
 // ============================================================
-// WiFi Settings - CHANGE THESE
+// WiFi Settings
 // ============================================================
-const char* WIFI_SSID = "Wmmcoto";
-const char* WIFI_PASS = "cotocoyol";
+const char* WIFI_SSID = "b(second)";
+const char* WIFI_PASS = "yoyoyoyo";
 
 // ============================================================
-// Server Settings - CHANGE THIS to your Railway URL
+// Server Settings
 // =======================https://room-monitoring-production.up.railway.app/=====================================
 const char* SERVER_URL = "https://room-monitoring-production.up.railway.app/api/status";
 
