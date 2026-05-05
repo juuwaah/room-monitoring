@@ -183,13 +183,6 @@
             color: #666;
             margin-top: 6px;
         }
-
-        .counter {
-            text-align: center;
-            font-size: 11px;
-            color: #808080;
-            margin-top: 10px;
-        }
     </style>
 </head>
 <body>
@@ -215,7 +208,8 @@
                 <h3>Como usar el teclado:</h3>
                 <ol>
                     <li>Presione <span class="key">A</span> para cambiar el estado (en sala / ausente)</li>
-                    <li>Ingrese los minutos con <span class="key">0</span>-<span class="key">9</span> (ej: <span class="key">3</span><span class="key">0</span> = 30 min)</li>
+                    <li>Ingrese la hora en formato HHMM con <span class="key">0</span>-<span class="key">9</span> (ej: <span class="key">1</span><span class="key">4</span><span class="key">3</span><span class="key">0</span> = 14:30)</li>
+                    <li>Para ausencia prolongada (fin de semana, etc.), ingrese <span class="key">0</span></li>
                     <li>Presione <span class="key">*</span> para confirmar y enviar</li>
                 </ol>
                 <h3>Otras teclas:</h3>
@@ -225,19 +219,15 @@
                 </ol>
                 <h3>Ejemplo:</h3>
                 <ol>
-                    <li>Al salir: <span class="key">A</span> &rarr; <span class="key">2</span><span class="key">0</span> &rarr; <span class="key">*</span> (ausente 20 min)</li>
-                    <li>Al regresar: <span class="key">A</span> &rarr; <span class="key">6</span><span class="key">0</span> &rarr; <span class="key">*</span> (en sala 60 min)</li>
+                    <li>Al salir hasta las 2pm: <span class="key">A</span> &rarr; <span class="key">1</span><span class="key">4</span><span class="key">0</span><span class="key">0</span> &rarr; <span class="key">*</span></li>
+                    <li>Al salir por el fin de semana: <span class="key">A</span> &rarr; <span class="key">0</span> &rarr; <span class="key">*</span></li>
                 </ol>
             </div>
         </div>
         <div class="footer">Hecho por Bakuho Goto, UCR-IDS. 2026</div>
-        <div class="counter"><img width="1" height="1" alt="">Visitante No. <span id="visitor">???</span></div>
     </div>
 
     <script>
-        // Fake visitor counter for the 90s vibe
-        document.getElementById("visitor").textContent = String(Math.floor(Math.random() * 9000) + 1000);
-
         const STATUS_TEXT = {
             in_room: "En la sala",
             out: "Ausente",
@@ -259,7 +249,7 @@
         function render() {
             if (!statusData) return;
 
-            const { name, status, minutes, updated_at } = statusData;
+            const { name, status, until_time, updated_at } = statusData;
 
             document.getElementById("name").textContent = name;
 
@@ -279,33 +269,45 @@
                 return;
             }
 
-            const updatedTime = new Date(updated_at);
-            const endTime = new Date(updatedTime.getTime() + minutes * 60 * 1000);
-            const now = new Date();
-            const remainMs = endTime - now;
-
-            // End time in Costa Rica (UTC-6)
-            const endCst = new Date(endTime.getTime() - 6 * 60 * 60 * 1000);
-            const endH = String(endCst.getUTCHours()).padStart(2, "0");
-            const endM = String(endCst.getUTCMinutes()).padStart(2, "0");
-            const endTimeStr = endH + ":" + endM;
-
-            if (remainMs > 0) {
-                const remainMin = Math.ceil(remainMs / 60000);
-                timerEl.textContent = "Hasta " + endTimeStr;
+            // Display until_time
+            if (until_time === "0") {
+                // Indefinite absence
+                timerEl.textContent = "---";
                 timerEl.className = "timer";
                 timerLabel.textContent = status === "in_room"
-                    ? "Va a estar en la sala por " + remainMin + " min"
-                    : "Va a regresar en " + remainMin + " min";
+                    ? "En sala hasta proximo aviso"
+                    : "Ausente hasta proximo aviso";
+            } else if (until_time && until_time.length === 4) {
+                const hh = until_time.substring(0, 2);
+                const mm = until_time.substring(2, 4);
+                const displayTime = hh + ":" + mm;
+
+                // Check if the time has passed (compare with Costa Rica time)
+                const now = new Date();
+                const nowCR = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+                const nowH = nowCR.getUTCHours();
+                const nowM = nowCR.getUTCMinutes();
+                const targetH = parseInt(hh);
+                const targetM = parseInt(mm);
+                const nowTotal = nowH * 60 + nowM;
+                const targetTotal = targetH * 60 + targetM;
+
+                if (targetTotal > nowTotal) {
+                    timerEl.textContent = "Hasta " + displayTime;
+                    timerEl.className = "timer";
+                } else {
+                    timerEl.textContent = displayTime + " (vencido)";
+                    timerEl.className = "timer expired";
+                }
+                timerLabel.textContent = "";
             } else {
-                timerEl.textContent = endTimeStr + " (vencido)";
-                timerEl.className = "timer expired";
-                timerLabel.textContent = status === "in_room"
-                    ? "Tiempo declarado agotado (posiblemente aun en la sala)"
-                    : "Tiempo declarado agotado (puede regresar pronto)";
+                timerEl.textContent = "--:--";
+                timerEl.className = "timer";
+                timerLabel.textContent = "";
             }
 
             // Updated time in Costa Rica (UTC-6)
+            const updatedTime = new Date(updated_at);
             const cst = new Date(updatedTime.getTime() - 6 * 60 * 60 * 1000);
             const h = String(cst.getUTCHours()).padStart(2, "0");
             const m = String(cst.getUTCMinutes()).padStart(2, "0");
@@ -313,7 +315,7 @@
         }
 
         fetchStatus();
-    
+
         setInterval(fetchStatus, 10000);
         setInterval(render, 1000);
     </script>

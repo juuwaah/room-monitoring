@@ -8,7 +8,7 @@ app = Flask(__name__)
 current_status = {
     "name": "Staff",
     "status": "unknown",
-    "minutes": 0,
+    "until_time": "",
     "updated_at": None,
 }
 
@@ -28,15 +28,24 @@ def update_status():
     data = request.get_json(force=True)
 
     status = data.get("status")
-    minutes = data.get("minutes")
+    until_time = data.get("until_time", "")
 
     if status not in ("in_room", "out"):
         return jsonify({"error": "status must be 'in_room' or 'out'"}), 400
-    if not isinstance(minutes, (int, float)) or minutes < 0:
-        return jsonify({"error": "minutes must be a non-negative number"}), 400
+
+    # Validate until_time: must be "0" (indefinite) or 4-digit HHMM
+    if until_time == "0":
+        pass  # indefinite
+    elif len(until_time) == 4 and until_time.isdigit():
+        hh = int(until_time[:2])
+        mm = int(until_time[2:])
+        if hh > 23 or mm > 59:
+            return jsonify({"error": "invalid time format"}), 400
+    else:
+        return jsonify({"error": "until_time must be '0' or 'HHMM'"}), 400
 
     current_status["status"] = status
-    current_status["minutes"] = int(minutes)
+    current_status["until_time"] = until_time
     current_status["updated_at"] = datetime.now(timezone.utc).isoformat()
 
     return jsonify({"ok": True, "status": current_status})

@@ -13,7 +13,7 @@ const char* WIFI_PASS = "yoyoyoyo";
 
 // ============================================================
 // Server Settings
-// =======================https://room-monitoring-production.up.railway.app/=====================================
+// ============================================================
 const char* SERVER_URL = "https://room-monitoring-production.up.railway.app/api/status";
 
 // ============================================================
@@ -36,7 +36,6 @@ char keys[ROWS][COLS] = {
 };
 
 // ESP32 GPIO pins for keypad rows and columns
-// Adjust these to match your wiring
 byte rowPins[ROWS] = {13, 12, 14, 27};
 byte colPins[COLS] = {26, 25, 33, 32};
 
@@ -52,7 +51,7 @@ enum State {
 
 State currentState = STATE_IDLE;
 bool isInRoom = true;        // true = in_room, false = out
-String minutesInput = "";    // Buffer for digit input
+String timeInput = "";       // Buffer for digit input (HHMM or "0")
 
 // ============================================================
 // Setup
@@ -123,43 +122,66 @@ void handleIdleKey(char key) {
   if (key == 'A') {
     // Toggle status and start input
     isInRoom = !isInRoom;
-    minutesInput = "";
+    timeInput = "";
     currentState = STATE_INPUT;
 
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print(isInRoom ? "EN SALA" : "SALIENDO");
     lcd.setCursor(0, 1);
-    lcd.print("Minutos: ");
+    lcd.print("Hora(HHMM): ");
   }
 }
 
 void handleInputKey(char key) {
   if (key >= '0' && key <= '9') {
-    // Max 3 digits (up to 999 minutes)
-    if (minutesInput.length() < 3) {
-      minutesInput += key;
-      lcd.setCursor(9, 1);
-      lcd.print(minutesInput);
-      lcd.print("   ");  // Clear trailing chars
+    // Max 4 digits (HHMM format)
+    if (timeInput.length() < 4) {
+      timeInput += key;
+      lcd.setCursor(12, 1);
+      lcd.print(timeInput);
+      lcd.print("    ");  // Clear trailing chars
     }
   }
   else if (key == '#') {
     // Backspace - delete last digit
-    if (minutesInput.length() > 0) {
-      minutesInput.remove(minutesInput.length() - 1);
-      lcd.setCursor(9, 1);
-      lcd.print(minutesInput);
-      lcd.print("   ");
+    if (timeInput.length() > 0) {
+      timeInput.remove(timeInput.length() - 1);
+      lcd.setCursor(12, 1);
+      lcd.print(timeInput);
+      lcd.print("    ");
     }
   }
   else if (key == '*') {
     // Confirm and send
-    if (minutesInput.length() == 0) {
+    if (timeInput.length() == 0) {
       lcd.setCursor(0, 1);
-      lcd.print("Ingrese numero! ");
+      lcd.print("Ingrese hora!   ");
       return;
     }
+
+    // "0" means indefinite (won't return until next update)
+    if (timeInput == "0") {
+      sendStatus();
+      return;
+    }
+
+    // Validate HHMM format (must be exactly 4 digits)
+    if (timeInput.length() != 4) {
+      lcd.setCursor(0, 1);
+      lcd.print("Use HHMM o 0!  ");
+      return;
+    }
+
+    int hh = timeInput.substring(0, 2).toInt();
+    int mm = timeInput.substring(2, 4).toInt();
+
+    if (hh > 23 || mm > 59) {
+      lcd.setCursor(0, 1);
+      lcd.print("Hora invalida!  ");
+      return;
+    }
+
     sendStatus();
   }
   else if (key == 'B') {
@@ -174,8 +196,6 @@ void handleInputKey(char key) {
 // Send Status to Server
 // ============================================================
 void sendStatus() {
-  int minutes = minutesInput.toInt();
-
   lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("Enviando...");
@@ -210,7 +230,7 @@ void sendStatus() {
   // Build JSON
   JsonDocument doc;
   doc["status"] = isInRoom ? "in_room" : "out";
-  doc["minutes"] = minutes;
+  doc["until_time"] = timeInput;  // "HHMM" or "0"
 
   String json;
   serializeJson(doc, json);
@@ -225,9 +245,14 @@ void sendStatus() {
     lcd.setCursor(0, 0);
     lcd.print(isInRoom ? "EN SALA" : "AUSENTE");
     lcd.setCursor(0, 1);
-    lcd.print("Enviado! ");
-    lcd.print(minutes);
-    lcd.print(" min");
+    if (timeInput == "0") {
+      lcd.print("Hasta prox aviso");
+    } else {
+      lcd.print("Hasta ");
+      lcd.print(timeInput.substring(0, 2));
+      lcd.print(":");
+      lcd.print(timeInput.substring(2, 4));
+    }
     Serial.println("Success!");
   } else {
     lcd.setCursor(0, 0);
