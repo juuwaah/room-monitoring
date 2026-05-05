@@ -282,17 +282,31 @@
                 const mm = until_time.substring(2, 4);
                 const displayTime = hh + ":" + mm;
 
-                // Check if the time has passed (compare with Costa Rica time)
+                // Build target datetime, accounting for day crossover
                 const now = new Date();
-                const nowCR = new Date(now.getTime() - 6 * 60 * 60 * 1000);
-                const nowH = nowCR.getUTCHours();
-                const nowM = nowCR.getUTCMinutes();
+                const updatedTime = new Date(updated_at);
+                const updatedCR = new Date(updatedTime.getTime() - 6 * 60 * 60 * 1000);
                 const targetH = parseInt(hh);
                 const targetM = parseInt(mm);
-                const nowTotal = nowH * 60 + nowM;
+                const updatedTotal = updatedCR.getUTCHours() * 60 + updatedCR.getUTCMinutes();
                 const targetTotal = targetH * 60 + targetM;
 
-                if (targetTotal > nowTotal) {
+                // Start with the same date as the update (in CR time)
+                let targetDate = new Date(Date.UTC(
+                    updatedCR.getUTCFullYear(),
+                    updatedCR.getUTCMonth(),
+                    updatedCR.getUTCDate(),
+                    targetH, targetM, 0, 0));
+
+                // If target time <= update time, it means the next day
+                if (targetTotal <= updatedTotal) {
+                    targetDate = new Date(targetDate.getTime() + 24 * 60 * 60 * 1000);
+                }
+
+                // Convert CR target back to UTC for comparison
+                const targetUTC = new Date(targetDate.getTime() + 6 * 60 * 60 * 1000);
+
+                if (now < targetUTC) {
                     timerEl.textContent = "Hasta " + displayTime;
                     timerEl.className = "timer";
                 } else {

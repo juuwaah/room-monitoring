@@ -155,8 +155,7 @@ void handleInputKey(char key) {
   else if (key == '*') {
     // Confirm and send
     if (timeInput.length() == 0) {
-      lcd.setCursor(0, 1);
-      lcd.print("Ingrese hora!   ");
+      showInputError("Ingrese hora!   ");
       return;
     }
 
@@ -168,8 +167,7 @@ void handleInputKey(char key) {
 
     // Validate HHMM format (must be exactly 4 digits)
     if (timeInput.length() != 4) {
-      lcd.setCursor(0, 1);
-      lcd.print("Use HHMM o 0!  ");
+      showInputError("Use HHMM o 0!  ");
       return;
     }
 
@@ -177,8 +175,7 @@ void handleInputKey(char key) {
     int mm = timeInput.substring(2, 4).toInt();
 
     if (hh > 23 || mm > 59) {
-      lcd.setCursor(0, 1);
-      lcd.print("Hora invalida!  ");
+      showInputError("Hora invalida!  ");
       return;
     }
 
@@ -274,6 +271,19 @@ void sendStatus() {
 // ============================================================
 // Display Helpers
 // ============================================================
+void showInputError(const char* msg) {
+  lcd.setCursor(0, 1);
+  lcd.print(msg);
+  delay(2000);
+  // Reset input and redisplay input screen
+  timeInput = "";
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print(isInRoom ? "EN SALA" : "SALIENDO");
+  lcd.setCursor(0, 1);
+  lcd.print("Hora(HHMM): ");
+}
+
 void showIdleScreen() {
   lcd.clear();
   lcd.setCursor(0, 0);
